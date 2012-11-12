@@ -22,6 +22,7 @@ type
   private
     FContent: string;
     FFields: TJSONObject;
+    FTagEscape: ShortString;
     FTagPrefix: ShortString;
   public
     constructor Create;
@@ -37,6 +38,7 @@ type
     property Content: string read FContent write FContent;
     property Fields: TJSONObject read FFields;
     property TagPrefix: ShortString read FTagPrefix write FTagPrefix;
+    property TagEscape: ShortString read FTagEscape write FTagEscape;
   end;
 
 implementation
@@ -122,57 +124,11 @@ end;
 procedure TJTemplate.Replace;
 var
   PStr: PString;
-  I, L, J, P: Integer;
   VName, VValue: string;
+  I, L, J, P, T: Integer;
 begin
   PStr := @FContent;
-  for I := 0 to Pred(FFields.Count) do
-  begin
-    VName := FTagPrefix + FFields.Names[I];
-    VValue := FFields.Items[I].AsString;
-    for J := 1 to Length(FContent) do
-    begin
-      P := Pos(VName, FContent);
-      if P <> 0 then
-      begin
-        L := Length(VName);
-        System.Delete(PStr^, P, L);
-        Insert(VValue, PStr^, P);
-        Break;
-      end;
-    end;
-  end;
-end;
-
-procedure TJTemplate.Replace(const ARecursive: Boolean);
-var
-  PStr: PString;
-  E, I, L, J, P: Integer;
-  VName, VValue: ShortString;
-begin
-  PStr := @FContent;
-  if ARecursive then
-  begin
-    E := 1;
-    for I := 0 to Pred(FFields.Count) do
-    begin
-      VName := FTagPrefix + FFields.Names[I];
-      VValue := FFields.Items[I].AsString;
-      for J := 1 to Length(FContent) do
-      begin
-        P := PosEx(VName, FContent, E);
-        if P > E then
-          E := P;
-        if P <> 0 then
-        begin
-          L := Length(VName);
-          System.Delete(PStr^, P, L);
-          Insert(VValue, PStr^, P);
-        end;
-      end;
-    end;
-  end
-  else
+  if FTagEscape = '' then
     for I := 0 to Pred(FFields.Count) do
     begin
       VName := FTagPrefix + FFields.Names[I];
@@ -188,7 +144,82 @@ begin
           Break;
         end;
       end;
+    end
+  else
+    for I := 0 to Pred(FFields.Count) do
+    begin
+      VName := FTagPrefix + FFields.Names[I];
+      VValue := FFields.Items[I].AsString;
+      for J := 1 to Length(FContent) do
+      begin
+        P := Pos(VName, FContent);
+        if P <> 0 then
+        begin
+          T := Length(FTagEscape);
+          if Copy(FContent, P - T, T) = FTagEscape then
+            VValue := Copy(VName, T + 1, MaxInt);
+          L := Length(VName);
+          System.Delete(PStr^, P, L);
+          Insert(VValue, PStr^, P);
+          Break;
+        end;
+      end;
     end;
+end;
+
+procedure TJTemplate.Replace(const ARecursive: Boolean);
+var
+  PStr: PString;
+  VName, VValue: string;
+  E, I, L, J, P, T: Integer;
+begin
+  PStr := @FContent;
+  if ARecursive then
+  begin
+    if FTagEscape = '' then
+      for I := 0 to Pred(FFields.Count) do
+      begin
+        E := 1;
+        VName := FTagPrefix + FFields.Names[I];
+        VValue := FFields.Items[I].AsString;
+        for J := 1 to Length(FContent) do
+        begin
+          P := PosEx(VName, FContent, E);
+          if P > E then
+            E := P;
+          if P <> 0 then
+          begin
+            L := Length(VName);
+            System.Delete(PStr^, P, L);
+            Insert(VValue, PStr^, P);
+          end;
+        end;
+      end
+    else
+      for I := 0 to Pred(FFields.Count) do
+      begin
+        E := 1;
+        VName := FTagPrefix + FFields.Names[I];
+        VValue := FFields.Items[I].AsString;
+        for J := 1 to Length(FContent) do
+        begin
+          P := PosEx(VName, FContent, E);
+          if P > E then
+            E := P;
+          if P <> 0 then
+          begin
+            T := Length(FTagEscape);
+            if Copy(FContent, P - T, T) = FTagEscape then
+              VValue := Copy(VName, T + 1, MaxInt);
+            L := Length(VName);
+            System.Delete(PStr^, P, L);
+            Insert(VValue, PStr^, P);
+          end;
+        end;
+      end;
+  end
+  else
+    Replace;
 end;
 
 end.
