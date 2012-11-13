@@ -10,7 +10,7 @@
         <MainUnitHasTitleStatement Value="False"/>
       </Flags>
       <MainUnit Value="0"/>
-      <Title Value="t1"/>
+      <Title Value="demo"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
       <ActiveWindowIndexAtStart Value="0"/>
@@ -41,9 +41,9 @@
     </RequiredPackages>
     <Units Count="1">
       <Unit0>
-        <Filename Value="t1.lpr"/>
+        <Filename Value="demo.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="t1"/>
+        <UnitName Value="demo"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
@@ -58,7 +58,7 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="t1"/>
+      <Filename Value="demo"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
