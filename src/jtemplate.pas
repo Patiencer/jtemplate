@@ -157,10 +157,17 @@ begin
         begin
           T := Length(FTagEscape);
           if Copy(FContent, P - T, T) = FTagEscape then
-            VValue := Copy(VName, T + 1, MaxInt);
-          L := Length(VName);
-          System.Delete(PStr^, P, L);
-          Insert(VValue, PStr^, P);
+          begin
+            L := Length(VName);
+            System.Delete(PStr^, P - T, L + T);
+            Insert(VName, PStr^, P - T);
+          end
+          else
+          begin
+            L := Length(VName);
+            System.Delete(PStr^, P, L);
+            Insert(VValue, PStr^, P);
+          end;
           Break;
         end;
       end;
@@ -210,10 +217,17 @@ begin
           begin
             T := Length(FTagEscape);
             if Copy(FContent, P - T, T) = FTagEscape then
-              VValue := Copy(VName, T + 1, MaxInt);
-            L := Length(VName);
-            System.Delete(PStr^, P, L);
-            Insert(VValue, PStr^, P);
+            begin
+              L := Length(VName);
+              System.Delete(PStr^, P - T, L + T);
+              Insert(VName, PStr^, P - T);
+            end
+            else
+            begin
+              L := Length(VName);
+              System.Delete(PStr^, P, L);
+              Insert(VValue, PStr^, P);
+            end;
           end;
         end;
       end;
