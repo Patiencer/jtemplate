@@ -15,9 +15,6 @@ uses
   SysUtils, StrUtils, Classes, FPJSON;
 
 type
-
-  { TJTemplate }
-
   TJTemplate = class
   private
     FContent: string;
@@ -29,10 +26,8 @@ type
     destructor Destroy; override;
     procedure LoadFromStream(AStream: TStream);
     procedure LoadFromFile(const AFileName: TFileName);
-    procedure LoadFromString(const S: string);
     procedure SaveToStream(AStream: TStream);
     procedure SaveToFile(const AFileName: TFileName);
-    procedure SaveToString(out S: string);
     procedure Replace; overload;
     procedure Replace(const ARecursive: Boolean); overload;
     property Content: string read FContent write FContent;
@@ -76,18 +71,6 @@ begin
   end;
 end;
 
-procedure TJTemplate.LoadFromString(const S: string);
-var
-  VString: TStringStream;
-begin
-  VString := TStringStream.Create(S);
-  try
-    LoadFromStream(VString);
-  finally
-    VString.Free;
-  end;
-end;
-
 procedure TJTemplate.SaveToStream(AStream: TStream);
 begin
   if not Assigned(AStream) then
@@ -108,26 +91,11 @@ begin
   end;
 end;
 
-procedure TJTemplate.SaveToString(out S: string);
-var
-  VString: TStringStream;
-begin
-  VString := TStringStream.Create('');
-  try
-    SaveToStream(VString);
-    S := VString.DataString;
-  finally
-    VString.Free;
-  end;
-end;
-
 procedure TJTemplate.Replace;
 var
-  PStr: PString;
   VName, VValue: string;
   I, L, J, P, T: Integer;
 begin
-  PStr := @FContent;
   if FTagEscape = '' then
     for I := 0 to Pred(FFields.Count) do
     begin
@@ -139,8 +107,8 @@ begin
         if P <> 0 then
         begin
           L := Length(VName);
-          System.Delete(PStr^, P, L);
-          Insert(VValue, PStr^, P);
+          System.Delete(FContent, P, L);
+          Insert(VValue, FContent, P);
           Break;
         end;
       end;
@@ -159,14 +127,14 @@ begin
           if Copy(FContent, P - T, T) = FTagEscape then
           begin
             L := Length(VName);
-            System.Delete(PStr^, P - T, L + T);
-            Insert(VName, PStr^, P - T);
+            System.Delete(FContent, P - T, L + T);
+            Insert(VName, FContent, P - T);
           end
           else
           begin
             L := Length(VName);
-            System.Delete(PStr^, P, L);
-            Insert(VValue, PStr^, P);
+            System.Delete(FContent, P, L);
+            Insert(VValue, FContent, P);
           end;
           Break;
         end;
@@ -176,11 +144,9 @@ end;
 
 procedure TJTemplate.Replace(const ARecursive: Boolean);
 var
-  PStr: PString;
   VName, VValue: string;
   E, I, L, J, P, T: Integer;
 begin
-  PStr := @FContent;
   if ARecursive then
   begin
     if FTagEscape = '' then
@@ -197,8 +163,8 @@ begin
           if P <> 0 then
           begin
             L := Length(VName);
-            System.Delete(PStr^, P, L);
-            Insert(VValue, PStr^, P);
+            System.Delete(FContent, P, L);
+            Insert(VValue, FContent, P);
           end;
         end;
       end
@@ -219,14 +185,14 @@ begin
             if Copy(FContent, P - T, T) = FTagEscape then
             begin
               L := Length(VName);
-              System.Delete(PStr^, P - T, L + T);
-              Insert(VName, PStr^, P - T);
+              System.Delete(FContent, P - T, L + T);
+              Insert(VName, FContent, P - T);
             end
             else
             begin
               L := Length(VName);
-              System.Delete(PStr^, P, L);
-              Insert(VValue, PStr^, P);
+              System.Delete(FContent, P, L);
+              Insert(VValue, FContent, P);
             end;
           end;
         end;
