@@ -19,10 +19,11 @@ type
   private
     FContent: string;
     FFields: TJSONObject;
+    FHTMLSupports: Boolean;
     FTagEscape: ShortString;
     FTagPrefix: ShortString;
   public
-    constructor Create;
+    constructor Create; virtual;
     destructor Destroy; override;
     procedure LoadFromStream(AStream: TStream);
     procedure LoadFromFile(const AFileName: TFileName);
@@ -32,16 +33,82 @@ type
     procedure Replace(const ARecursive: Boolean); overload;
     property Content: string read FContent write FContent;
     property Fields: TJSONObject read FFields;
+    property HTMLSupports: Boolean read FHTMLSupports write FHTMLSupports;
     property TagPrefix: ShortString read FTagPrefix write FTagPrefix;
     property TagEscape: ShortString read FTagEscape write FTagEscape;
   end;
 
+const
+  LatinCharsCount = 75;
+  LatinChars: array[1..LatinCharsCount] of string = (
+    '"', '<', '>', '^', '~', '£', '§', '°', '²', '³', 'µ', '·', '¼', '½', '¿',
+    'À', 'Á', 'Â', 'Ã', 'Ä', 'Å', 'Æ', 'Ç', 'È', 'É', 'Ê', 'Ë', 'Ì', 'Í', 'Î',
+    'Ï', 'Ñ', 'Ò', 'Ó', 'Ô', 'Õ', 'Ö', 'Ù', 'Ú', 'Û', 'Ü', 'Ý', 'ß', 'á', 'à',
+    'â', 'ã', 'ä', 'å', 'æ', 'ç', 'é', 'è', 'ê', 'ë', 'ì', 'í', 'î', 'ï', 'ñ',
+    'ò', 'ó', 'ô', 'õ', 'ö', '÷', 'ù', 'ú', 'û', 'ü', 'ý', 'ÿ', '&', '´', '`');
+  HtmlChars: array[1..LatinCharsCount] of string = (
+    '&quot;', '&lt;', '&gt;', '&circ;', '&tilde;', '&pound;', '&sect;', '&deg;',
+    '&sup2;', '&sup3;', '&micro;', '&middot;', '&frac14;', '&frac12;', '&iquest;',
+    '&Agrave;', '&Aacute;', '&Acirc;', '&Atilde;', '&Auml;', '&Aring;', '&AElig;',
+    '&Ccedil;', '&Egrave;', '&Eacute;', '&Ecirc;', '&Euml;', '&Igrave;', '&Iacute;',
+    '&Icirc;', '&Iuml;', '&Ntilde;', '&Ograve;', '&Oacute;', '&Ocirc;', '&Otilde;',
+    '&Ouml;', '&Ugrave;', '&Uacute;', '&Ucirc;', '&Uuml;', '&Yacute;', '&szlig;',
+    '&aacute;', '&agrave;', '&acirc;', '&atilde;', '&auml;', '&aring;', '&aelig;',
+    '&ccedil;', '&eacute;', '&egrave;', '&ecirc;', '&euml;', '&igrave;', '&iacute;',
+    '&icirc;', '&iuml;', '&ntilde;', '&ograve;', '&oacute;', '&ocirc;', '&otilde;',
+    '&ouml;', '&divide;', '&ugrave;', '&uacute;', '&ucirc;', '&uuml;', '&yacute;',
+    '&yuml;', '&amp;', '&acute;', '&grave;');
+
+function StrToHtml(const S: string): string;
+
 implementation
+
+function StrToHtml(const S: string): string;
+var
+  L, C: Integer;
+  VFound: Boolean;
+  PComp, PSrc, PLast: PChar;
+  VResStr, VCompStr: string;
+begin
+  L := Length(LatinChars);
+  if L <> Length(HtmlChars) then
+    raise Exception.Create(SErrAmountStrings);
+  Dec(L);
+  VCompStr := S;
+  VResStr := '';
+  PSrc := @S[1];
+  PComp := @VCompStr[1];
+  PLast := PComp + Length(S);
+  while PComp < PLast do
+  begin
+    VFound := False;
+    for C := 0 to L do
+    begin
+      if (Length(LatinChars[C]) > 0) and (LatinChars[C][1] = PComp^) and
+        (Length(LatinChars[C]) <= (PLast - PComp)) and
+        (CompareByte(LatinChars[C][1], PComp^, Length(LatinChars[C])) = 0) then
+      begin
+        VResStr := VResStr + HtmlChars[C];
+        PComp := PComp + Length(LatinChars[C]);
+        PSrc := PSrc + Length(LatinChars[C]);
+        VFound := True;
+      end;
+    end;
+    if not VFound then
+    begin
+      VResStr := VResStr + PSrc^;
+      Inc(PComp);
+      Inc(PSrc);
+    end;
+  end;
+  Result := VResStr;
+end;
 
 constructor TJTemplate.Create;
 begin
   FFields := TJSONObject.Create;
   FTagPrefix := '@';
+  FHTMLSupports := True;
 end;
 
 destructor TJTemplate.Destroy;
@@ -100,7 +167,10 @@ begin
     for I := 0 to Pred(FFields.Count) do
     begin
       VName := FTagPrefix + FFields.Names[I];
-      VValue := FFields.Items[I].AsString;
+      if FHTMLSupports then
+        VValue := StrToHtml(FFields.Items[I].AsString)
+      else
+        VValue := FFields.Items[I].AsString;
       for J := 1 to Length(FContent) do
       begin
         P := Pos(VName, FContent);
@@ -117,7 +187,10 @@ begin
     for I := 0 to Pred(FFields.Count) do
     begin
       VName := FTagPrefix + FFields.Names[I];
-      VValue := FFields.Items[I].AsString;
+      if FHTMLSupports then
+        VValue := StrToHtml(FFields.Items[I].AsString)
+      else
+        VValue := FFields.Items[I].AsString;
       for J := 1 to Length(FContent) do
       begin
         P := Pos(VName, FContent);
@@ -154,7 +227,10 @@ begin
       begin
         E := 1;
         VName := FTagPrefix + FFields.Names[I];
-        VValue := FFields.Items[I].AsString;
+        if FHTMLSupports then
+          VValue := StrToHtml(FFields.Items[I].AsString)
+        else
+          VValue := FFields.Items[I].AsString;
         for J := 1 to Length(FContent) do
         begin
           P := PosEx(VName, FContent, E);
@@ -173,7 +249,10 @@ begin
       begin
         E := 1;
         VName := FTagPrefix + FFields.Names[I];
-        VValue := FFields.Items[I].AsString;
+        if FHTMLSupports then
+          VValue := StrToHtml(FFields.Items[I].AsString)
+        else
+          VValue := FFields.Items[I].AsString;
         for J := 1 to Length(FContent) do
         begin
           P := PosEx(VName, FContent, E);
