@@ -82,7 +82,7 @@ begin
   while PComp < PLast do
   begin
     VFound := False;
-    for C := 0 to L do
+    for C := 1 to L do
     begin
       if (Length(LatinChars[C]) > 0) and (LatinChars[C][1] = PComp^) and
         (Length(LatinChars[C]) <= (PLast - PComp)) and
