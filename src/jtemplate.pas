@@ -24,6 +24,9 @@ type
   TJTemplateLoadingFieldsEvent = procedure(Sender: TObject;
     var AVar, AValue: string) of object;
 
+  TJTemplateReplacingEvent = procedure(Sender: TObject;
+    var AValue: string) of object;
+
   { TJTemplateParser }
 
   TJTemplateParser = class
@@ -33,6 +36,7 @@ type
     FHtmlSupports: Boolean;
     FOnLoadingFields: TJTemplateLoadingFieldsEvent;
     FOnReplace: TNotifyEvent;
+    FOnReplacing: TJTemplateReplacingEvent;
     FTagEscape: ShortString;
     FTagPrefix: ShortString;
     FTagSuffix: ShortString;
@@ -48,6 +52,8 @@ type
     property TagEscape: ShortString read FTagEscape write FTagEscape;
     property OnLoadingFields: TJTemplateLoadingFieldsEvent read FOnLoadingFields
       write FOnLoadingFields;
+    property OnReplacing: TJTemplateReplacingEvent read FOnReplacing
+      write FOnReplacing;
     property OnReplace: TNotifyEvent read FOnReplace write FOnReplace;
   end;
 
@@ -77,6 +83,7 @@ type
     FContent: TStrings;
     FOnLoadingFields: TJTemplateLoadingFieldsEvent;
     FOnReplace: TNotifyEvent;
+    FOnReplacing: TJTemplateReplacingEvent;
     FStream: TJTemplateStream;
     function GetContent: TStrings;
     function GetFields: TJSONObject;
@@ -118,6 +125,8 @@ type
     property TagEscape: string read GetTagEscape write SetTagEscape;
     property OnLoadingFields: TJTemplateLoadingFieldsEvent read FOnLoadingFields
       write FOnLoadingFields;
+    property OnReplacing: TJTemplateReplacingEvent read FOnReplacing
+      write FOnReplacing;
     property OnReplace: TNotifyEvent read FOnReplace write FOnReplace;
   end;
 
@@ -237,6 +246,8 @@ begin
       else
       begin
         System.Delete(FContent, P, VTagLen);
+        if Assigned(FOnReplacing) then
+          FOnReplacing(Self, VValue);
         Insert(VValue, FContent, P);
         Inc(P, Length(VValue));
         if not ARecursive then
@@ -416,6 +427,7 @@ begin
   if Assigned(AValue) then
   begin
     AValue.OnLoadingFields := FOnLoadingFields;
+    AValue.OnReplacing := FOnReplacing;
     AValue.OnReplace := FOnReplace;
   end;
 end;
@@ -445,11 +457,14 @@ begin
   inherited Loaded;
   if Assigned(FContent) then
     FStream.FParser.FContent := FContent.Text;
-  if Assigned(FOnReplace) and Assigned(FStream) and
-    Assigned(FStream.FParser) then
+  if Assigned(FStream) and Assigned(FStream.FParser) then
   begin
-    FStream.FParser.OnLoadingFields := FOnLoadingFields;
-    FStream.FParser.OnReplace := FOnReplace;
+    if Assigned(FOnLoadingFields) then
+      FStream.FParser.OnLoadingFields := FOnLoadingFields;
+    if Assigned(FOnReplacing) then
+      FStream.FParser.OnReplacing := FOnReplacing;
+    if Assigned(FOnReplace) then
+      FStream.FParser.OnReplace := FOnReplace;
   end;
 end;
 

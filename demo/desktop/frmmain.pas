@@ -20,6 +20,7 @@ type
     procedure btReplaceClick(Sender: TObject);
     procedure JTemplate1LoadingFields(Sender: TObject; var AVar, AValue: string);
     procedure JTemplate1Replace(Sender: TObject);
+    procedure JTemplate1Replacing(Sender: TObject; var AValue: string);
   end;
 
 var
@@ -48,6 +49,15 @@ procedure TfrMain.JTemplate1Replace(Sender: TObject);
 begin
   edResult.SetHtmlFromStr(JTemplate1.Content.Text);
   Caption := edResult.Title;
+end;
+
+procedure TfrMain.JTemplate1Replacing(Sender: TObject; var AValue: string);
+var
+  VValue: string;
+begin
+  VValue := AValue;
+  AValue := '-' + AValue + '-';
+  edLog.Lines.Add(Format('Old value: %s; New value: %s', [VValue, AValue]));
 end;
 
 end.

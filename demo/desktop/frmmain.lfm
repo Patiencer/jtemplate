@@ -64,6 +64,7 @@ object frMain: TfrMain
     HtmlSupports = True
     TagPrefix = '@'
     OnLoadingFields = JTemplate1LoadingFields
+    OnReplacing = JTemplate1Replacing
     OnReplace = JTemplate1Replace
     left = 118
     top = 40
