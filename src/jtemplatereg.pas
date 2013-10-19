@@ -12,7 +12,7 @@ unit JTemplateReg;
 interface
 
 uses
-  Classes, JTemplate;
+  LResources, Classes, JTemplate;
 
 procedure Register;
 
@@ -22,5 +22,8 @@ procedure Register;
 begin
   RegisterComponents('JTemplate', [TJTemplate]);
 end;
+
+initialization
+  {$i jtemplatereg.lrs}
 
 end.
