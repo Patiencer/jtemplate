@@ -54,6 +54,7 @@ object frMain: TfrMain
     )
     HtmlSupports = True
     TagPrefix = '@'
+    OnReplace = JTemplate1Replace
     left = 118
     top = 40
   end

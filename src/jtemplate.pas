@@ -28,6 +28,7 @@ type
     FContent: string;
     FFields: TJSONObject;
     FHtmlSupports: Boolean;
+    FOnReplace: TNotifyEvent;
     FTagEscape: ShortString;
     FTagPrefix: ShortString;
     FTagSuffix: ShortString;
@@ -41,6 +42,7 @@ type
     property TagPrefix: ShortString read FTagPrefix write FTagPrefix;
     property TagSuffix: ShortString read FTagSuffix write FTagSuffix;
     property TagEscape: ShortString read FTagEscape write FTagEscape;
+    property OnReplace: TNotifyEvent read FOnReplace write FOnReplace;
   end;
 
   { TJTemplateStream }
@@ -67,6 +69,7 @@ type
   TJTemplate = class(TComponent)
   private
     FContent: TStrings;
+    FOnReplace: TNotifyEvent;
     FStream: TJTemplateStream;
     function GetContent: TStrings;
     function GetFields: TJSONObject;
@@ -106,6 +109,7 @@ type
     property TagPrefix: string read GetTagPrefix write SetTagPrefix;
     property TagSuffix: string read GetTagSuffix write SetTagSuffix;
     property TagEscape: string read GetTagEscape write SetTagEscape;
+    property OnReplace: TNotifyEvent read FOnReplace write FOnReplace;
   end;
 
 resourcestring
@@ -229,6 +233,8 @@ begin
       end;
     until False;
   end;
+  if Assigned(FOnReplace) then
+    FOnReplace(Self);
 end;
 
 { TJTemplateStream }
@@ -396,6 +402,8 @@ end;
 procedure TJTemplate.SetParser(AValue: TJTemplateParser);
 begin
   FStream.FParser := AValue;
+  if Assigned(AValue) then
+    AValue.OnReplace := FOnReplace;
 end;
 
 procedure TJTemplate.SetStream(AValue: TJTemplateStream);
@@ -423,6 +431,9 @@ begin
   inherited Loaded;
   if Assigned(FContent) then
     FStream.FParser.FContent := FContent.Text;
+  if Assigned(FOnReplace) and Assigned(FStream) and
+    Assigned(FStream.FParser) then
+    FStream.FParser.OnReplace := FOnReplace;
 end;
 
 procedure TJTemplate.Replace(const ARecursive: Boolean);
