@@ -21,6 +21,8 @@ type
 
   TJTemplateStreamClass = class of TJTemplateStream;
 
+  TJTemplateLoadingFields = procedure(var AVar, AValue: string) of object;
+
   { TJTemplateParser }
 
   TJTemplateParser = class
@@ -28,6 +30,7 @@ type
     FContent: string;
     FFields: TJSONObject;
     FHtmlSupports: Boolean;
+    FOnLoadingFields: TJTemplateLoadingFields;
     FOnReplace: TNotifyEvent;
     FTagEscape: ShortString;
     FTagPrefix: ShortString;
@@ -42,6 +45,8 @@ type
     property TagPrefix: ShortString read FTagPrefix write FTagPrefix;
     property TagSuffix: ShortString read FTagSuffix write FTagSuffix;
     property TagEscape: ShortString read FTagEscape write FTagEscape;
+    property OnLoadingFields: TJTemplateLoadingFields read FOnLoadingFields
+      write FOnLoadingFields;
     property OnReplace: TNotifyEvent read FOnReplace write FOnReplace;
   end;
 
@@ -69,6 +74,7 @@ type
   TJTemplate = class(TComponent)
   private
     FContent: TStrings;
+    FOnLoadingFields: TJTemplateLoadingFields;
     FOnReplace: TNotifyEvent;
     FStream: TJTemplateStream;
     function GetContent: TStrings;
@@ -109,6 +115,8 @@ type
     property TagPrefix: string read GetTagPrefix write SetTagPrefix;
     property TagSuffix: string read GetTagSuffix write SetTagSuffix;
     property TagEscape: string read GetTagEscape write SetTagEscape;
+    property OnLoadingFields: TJTemplateLoadingFields read FOnLoadingFields
+      write FOnLoadingFields;
     property OnReplace: TNotifyEvent read FOnReplace write FOnReplace;
   end;
 
@@ -200,21 +208,23 @@ end;
 
 procedure TJTemplateParser.Replace(const ARecursive: Boolean);
 var
-  VName, VValue: string;
+  VVar, VValue: string;
   I, P, VTagLen, VEscapLen: Integer;
 begin
   VEscapLen := Length(FTagEscape);
   for I := 0 to Pred(FFields.Count) do
   begin
-    VName := FTagPrefix + FFields.Names[I] + FTagSuffix;
+    VVar := FTagPrefix + FFields.Names[I] + FTagSuffix;
     if FHtmlSupports then
       VValue := StrToHtml(FFields.Items[I].AsString)
     else
       VValue := FFields.Items[I].AsString;
+    if Assigned(FOnLoadingFields) then
+      FOnLoadingFields(VVar, VValue);
     P := 1;
-    VTagLen := Length(VName);
+    VTagLen := Length(VVar);
     repeat
-      P := PosEx(VName, FContent, P);
+      P := PosEx(VVar, FContent, P);
       if P < 1 then
         Break;
       if (VEscapLen <> 0) and // no TagEscape defined
@@ -403,7 +413,10 @@ procedure TJTemplate.SetParser(AValue: TJTemplateParser);
 begin
   FStream.FParser := AValue;
   if Assigned(AValue) then
+  begin
+    AValue.OnLoadingFields := FOnLoadingFields;
     AValue.OnReplace := FOnReplace;
+  end;
 end;
 
 procedure TJTemplate.SetStream(AValue: TJTemplateStream);
@@ -433,7 +446,10 @@ begin
     FStream.FParser.FContent := FContent.Text;
   if Assigned(FOnReplace) and Assigned(FStream) and
     Assigned(FStream.FParser) then
+  begin
+    FStream.FParser.OnLoadingFields := FOnLoadingFields;
     FStream.FParser.OnReplace := FOnReplace;
+  end;
 end;
 
 procedure TJTemplate.Replace(const ARecursive: Boolean);
