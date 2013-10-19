@@ -17,9 +17,13 @@ uses
 type
   EJTemplate = class(Exception);
 
-  { TJTemplate }
+  TJTemplateParserClass = class of TJTemplateParser;
 
-  TJTemplate = class
+  TJTemplateStreamClass = class of TJTemplateStream;
+
+  { TJTemplateParser }
+
+  TJTemplateParser = class
   private
     FContent: string;
     FFields: TJSONObject;
@@ -30,17 +34,78 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    procedure LoadFromStream(AStream: TStream);
-    procedure LoadFromFile(const AFileName: TFileName);
-    procedure SaveToStream(AStream: TStream);
-    procedure SaveToFile(const AFileName: TFileName);
     procedure Replace(const ARecursive: Boolean = False); virtual;
     property Content: string read FContent write FContent;
-    property Fields: TJSONObject read FFields;
+    property Fields: TJSONObject read FFields write FFields;
     property HtmlSupports: Boolean read FHtmlSupports write FHtmlSupports;
     property TagPrefix: ShortString read FTagPrefix write FTagPrefix;
     property TagSuffix: ShortString read FTagSuffix write FTagSuffix;
     property TagEscape: ShortString read FTagEscape write FTagEscape;
+  end;
+
+  { TJTemplateStream }
+
+  TJTemplateStream = class
+  private
+    FParser: TJTemplateParser;
+  protected
+    function CreateParser: TJTemplateParser; virtual;
+    procedure FreeParser; virtual;
+    function GetParserClass: TJTemplateParserClass; virtual;
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    procedure LoadFromStream(AStream: TStream);
+    procedure LoadFromFile(const AFileName: TFileName);
+    procedure SaveToStream(AStream: TStream);
+    procedure SaveToFile(const AFileName: TFileName);
+    property Parser: TJTemplateParser read FParser write FParser;
+  end;
+
+  { TJTemplate }
+
+  TJTemplate = class(TComponent)
+  private
+    FContent: TStrings;
+    FStream: TJTemplateStream;
+    function GetContent: TStrings;
+    function GetFields: TJSONObject;
+    function GetHtmlSupports: Boolean;
+    function GetParser: TJTemplateParser;
+    function GetStream: TJTemplateStream;
+    function GetTagEscape: string;
+    function GetTagPrefix: string;
+    function GetTagSuffix: string;
+    procedure SetContent(AValue: TStrings);
+    procedure SetFields(AValue: TJSONObject);
+    procedure SetHtmlSupports(AValue: Boolean);
+    procedure SetParser(AValue: TJTemplateParser);
+    procedure SetStream(AValue: TJTemplateStream);
+    procedure SetTagEscape(AValue: string);
+    procedure SetTagPrefix(AValue: string);
+    procedure SetTagSuffix(AValue: string);
+  protected
+    procedure Loaded; override;
+    function CreateStream: TJTemplateStream; virtual;
+    procedure FreeStream; virtual;
+    function GetStreamClass: TJTemplateStreamClass;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure Replace(const ARecursive: Boolean = False);
+    procedure LoadFromStream(AStream: TStream);
+    procedure LoadFromFile(const AFileName: TFileName);
+    procedure SaveToStream(AStream: TStream);
+    procedure SaveToFile(const AFileName: TFileName);
+    property Fields: TJSONObject read GetFields write SetFields;
+    property Parser: TJTemplateParser read GetParser write SetParser;
+    property Stream: TJTemplateStream read GetStream write SetStream;
+  published
+    property Content: TStrings read GetContent write SetContent;
+    property HtmlSupports: Boolean read GetHtmlSupports write SetHtmlSupports;
+    property TagPrefix: string read GetTagPrefix write SetTagPrefix;
+    property TagSuffix: string read GetTagSuffix write SetTagSuffix;
+    property TagEscape: string read GetTagEscape write SetTagEscape;
   end;
 
 resourcestring
@@ -114,63 +179,22 @@ begin
   Result := VResStr;
 end;
 
-{ TJTemplate }
+{ TJTemplateParser }
 
-constructor TJTemplate.Create;
+constructor TJTemplateParser.Create;
 begin
   FFields := TJSONObject.Create;
   FTagPrefix := '@';
   FHtmlSupports := True;
 end;
 
-destructor TJTemplate.Destroy;
+destructor TJTemplateParser.Destroy;
 begin
   FreeAndNil(FFields);
   inherited Destroy;
 end;
 
-procedure TJTemplate.LoadFromStream(AStream: TStream);
-begin
-  if not Assigned(AStream) then
-    raise EJTemplate.CreateFmt(SNilParamError, ['AStream']);
-  AStream.Seek(0, 0);
-  SetLength(FContent, AStream.Size);
-  AStream.Read(Pointer(FContent)^, Length(FContent));
-end;
-
-procedure TJTemplate.LoadFromFile(const AFileName: TFileName);
-var
-  VFile: TFileStream;
-begin
-  VFile := TFileStream.Create(AFileName, fmOpenRead or fmShareDenyWrite);
-  try
-    LoadFromStream(VFile);
-  finally
-    VFile.Free;
-  end;
-end;
-
-procedure TJTemplate.SaveToStream(AStream: TStream);
-begin
-  if not Assigned(AStream) then
-    raise EJTemplate.CreateFmt(SNilParamError, ['AStream']);
-  AStream.Seek(0, 0);
-  AStream.Write(Pointer(FContent)^, Length(FContent));
-end;
-
-procedure TJTemplate.SaveToFile(const AFileName: TFileName);
-var
-  VFile: TFileStream;
-begin
-  VFile := TFileStream.Create(AFileName, fmCreate);
-  try
-    SaveToStream(VFile);
-  finally
-    VFile.Free;
-  end;
-end;
-
-procedure TJTemplate.Replace(const ARecursive: Boolean);
+procedure TJTemplateParser.Replace(const ARecursive: Boolean);
 var
   VName, VValue: string;
   I, P, VTagLen, VEscapLen: Integer;
@@ -205,6 +229,225 @@ begin
       end;
     until False;
   end;
+end;
+
+{ TJTemplateStream }
+
+constructor TJTemplateStream.Create;
+begin
+  inherited Create;
+  FParser := CreateParser;
+end;
+
+destructor TJTemplateStream.Destroy;
+begin
+  FreeParser;
+  inherited Destroy;
+end;
+
+function TJTemplateStream.CreateParser: TJTemplateParser;
+begin
+  Result := GetParserClass.Create;
+end;
+
+procedure TJTemplateStream.FreeParser;
+begin
+  FreeAndNil(FParser);
+end;
+
+function TJTemplateStream.GetParserClass: TJTemplateParserClass;
+begin
+  Result := TJTemplateParser;
+end;
+
+procedure TJTemplateStream.LoadFromStream(AStream: TStream);
+begin
+  if not Assigned(AStream) then
+    raise EJTemplate.CreateFmt(SNilParamError, ['AStream']);
+  AStream.Seek(0, 0);
+  SetLength(FParser.FContent, AStream.Size);
+  AStream.Read(Pointer(FParser.FContent)^, Length(FParser.FContent));
+end;
+
+procedure TJTemplateStream.LoadFromFile(const AFileName: TFileName);
+var
+  VFile: TFileStream;
+begin
+  VFile := TFileStream.Create(AFileName, fmOpenRead or fmShareDenyWrite);
+  try
+    LoadFromStream(VFile);
+  finally
+    VFile.Free;
+  end;
+end;
+
+procedure TJTemplateStream.SaveToStream(AStream: TStream);
+begin
+  if not Assigned(AStream) then
+    raise EJTemplate.CreateFmt(SNilParamError, ['AStream']);
+  AStream.Seek(0, 0);
+  AStream.Write(Pointer(FParser.FContent)^, Length(FParser.FContent));
+end;
+
+procedure TJTemplateStream.SaveToFile(const AFileName: TFileName);
+var
+  VFile: TFileStream;
+begin
+  VFile := TFileStream.Create(AFileName, fmCreate);
+  try
+    SaveToStream(VFile);
+  finally
+    VFile.Free;
+  end;
+end;
+
+{ TJTemplate }
+
+constructor TJTemplate.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FStream := CreateStream;
+  FContent := TStringList.Create;
+end;
+
+destructor TJTemplate.Destroy;
+begin
+  FContent.Free;
+  FreeStream;
+  inherited Destroy;
+end;
+
+function TJTemplate.CreateStream: TJTemplateStream;
+begin
+  Result := GetStreamClass.Create;
+end;
+
+procedure TJTemplate.FreeStream;
+begin
+  FreeAndNil(FStream);
+end;
+
+function TJTemplate.GetStreamClass: TJTemplateStreamClass;
+begin
+  Result := TJTemplateStream;
+end;
+
+function TJTemplate.GetContent: TStrings;
+begin
+  Result := FContent;
+  if Assigned(FContent) then
+    FContent.Text := FStream.FParser.FContent;
+end;
+
+function TJTemplate.GetFields: TJSONObject;
+begin
+  Result := FStream.FParser.FFields;
+end;
+
+function TJTemplate.GetHtmlSupports: Boolean;
+begin
+  Result := FStream.FParser.FHtmlSupports;
+end;
+
+function TJTemplate.GetParser: TJTemplateParser;
+begin
+  Result := FStream.FParser;
+end;
+
+function TJTemplate.GetStream: TJTemplateStream;
+begin
+  Result := FStream;
+end;
+
+function TJTemplate.GetTagEscape: string;
+begin
+  Result := FStream.FParser.FTagEscape;
+end;
+
+function TJTemplate.GetTagPrefix: string;
+begin
+  Result := FStream.FParser.FTagPrefix;
+end;
+
+function TJTemplate.GetTagSuffix: string;
+begin
+  Result := FStream.FParser.FTagSuffix;
+end;
+
+procedure TJTemplate.SetContent(AValue: TStrings);
+begin
+  if Assigned(AValue) then
+  begin
+    FContent.Assign(AValue);
+    FStream.FParser.FContent := AValue.Text;
+  end;
+end;
+
+procedure TJTemplate.SetFields(AValue: TJSONObject);
+begin
+  FStream.FParser.FFields := AValue;
+end;
+
+procedure TJTemplate.SetHtmlSupports(AValue: Boolean);
+begin
+  FStream.FParser.FHtmlSupports := AValue;
+end;
+
+procedure TJTemplate.SetParser(AValue: TJTemplateParser);
+begin
+  FStream.FParser := AValue;
+end;
+
+procedure TJTemplate.SetStream(AValue: TJTemplateStream);
+begin
+  FStream := AValue;
+end;
+
+procedure TJTemplate.SetTagEscape(AValue: string);
+begin
+  FStream.FParser.FTagEscape := AValue;
+end;
+
+procedure TJTemplate.SetTagPrefix(AValue: string);
+begin
+  FStream.FParser.FTagPrefix := AValue;
+end;
+
+procedure TJTemplate.SetTagSuffix(AValue: string);
+begin
+  FStream.FParser.FTagSuffix := AValue;
+end;
+
+procedure TJTemplate.Loaded;
+begin
+  inherited Loaded;
+  if Assigned(FContent) then
+    FStream.FParser.FContent := FContent.Text;
+end;
+
+procedure TJTemplate.Replace(const ARecursive: Boolean);
+begin
+  FStream.FParser.Replace(ARecursive);
+end;
+
+procedure TJTemplate.LoadFromStream(AStream: TStream);
+begin
+  FStream.LoadFromStream(AStream);
+end;
+
+procedure TJTemplate.LoadFromFile(const AFileName: TFileName);
+begin
+  FStream.LoadFromFile(AFileName);
+end;
+
+procedure TJTemplate.SaveToStream(AStream: TStream);
+begin
+  FStream.SaveToStream(AStream);
+end;
+
+procedure TJTemplate.SaveToFile(const AFileName: TFileName);
+begin
+  FStream.LoadFromFile(AFileName);
 end;
 
 end.

@@ -6,17 +6,18 @@ uses
   JTemplate;
 
 var
-  VView: TJTemplate;
+  VView: TJTemplateStream;
 begin
-  VView := TJTemplate.Create;
+  VView := TJTemplateStream.Create;
   try
     VView.LoadFromFile('test.html');
-    VView.Fields.Add('title', 'Demo');
-    VView.Fields.Add('hr', '<hr />');
-    VView.Fields.Add('test.hello', 'JTemplate demo');
-    VView.Fields.Add('hr', '<hr />');
-    VView.Replace;
-    Write(VView.Content);
+    VView.Parser.HtmlSupports := False;
+    VView.Parser.Fields.Add('title', 'Demo');
+    VView.Parser.Fields.Add('hr', '<hr />');
+    VView.Parser.Fields.Add('test.hello', 'JTemplate demo');
+    VView.Parser.Fields.Add('hr', '<hr />');
+    VView.Parser.Replace;
+    Write(VView.Parser.Content);
   finally
     VView.Free;
   end;

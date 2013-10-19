@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
     <Version Value="9"/>
@@ -36,7 +36,7 @@
     </RunParams>
     <RequiredPackages Count="1">
       <Item1>
-        <PackageName Value="JTemplatePkg"/>
+        <PackageName Value="JTemplateRT"/>
       </Item1>
     </RequiredPackages>
     <Units Count="1">

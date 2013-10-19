@@ -6,14 +6,14 @@ uses
   JTemplate;
 
 var
-  VView: TJTemplate;
+  VView: TJTemplateStream;
 begin
-  VView := TJTemplate.Create;
+  VView := TJTemplateStream.Create;
   try
     VView.LoadFromFile('test.html');
-    VView.Fields.Add('value', 'a"b"c');
-    VView.Replace;
-    Write(VView.Content);
+    VView.Parser.Fields.Add('value', 'a"b"c');
+    VView.Parser.Replace;
+    Write(VView.Parser.Content);
   finally
     VView.Free;
   end;
