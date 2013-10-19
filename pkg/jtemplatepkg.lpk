@@ -20,7 +20,7 @@
     </CompilerOptions>
     <Description Value="JTemplate helps you to fill variables in a template file. It was originally designed to fill custom tags in HTML file. However, it can be used in any context since it does not depend on HTML handling routines."/>
     <License Value="Please see the LICENSE file."/>
-    <Version Release="2" Build="1"/>
+    <Version Release="3"/>
     <Files Count="1">
       <Item1>
         <Filename Value="..\src\jtemplate.pas"/>
