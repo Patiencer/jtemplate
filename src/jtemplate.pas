@@ -21,7 +21,8 @@ type
 
   TJTemplateStreamClass = class of TJTemplateStream;
 
-  TJTemplateLoadingFields = procedure(var AVar, AValue: string) of object;
+  TJTemplateLoadingFields = procedure(Sender: TObject;
+    var AVar, AValue: string) of object;
 
   { TJTemplateParser }
 
@@ -220,7 +221,7 @@ begin
     else
       VValue := FFields.Items[I].AsString;
     if Assigned(FOnLoadingFields) then
-      FOnLoadingFields(VVar, VValue);
+      FOnLoadingFields(Self, VVar, VValue);
     P := 1;
     VTagLen := Length(VVar);
     repeat

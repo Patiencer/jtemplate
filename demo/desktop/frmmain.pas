@@ -18,7 +18,7 @@ type
     JTemplate1: TJTemplate;
     edLog: TMemo;
     procedure btReplaceClick(Sender: TObject);
-    procedure JTemplate1LoadingFields(var AVar, AValue: string);
+    procedure JTemplate1LoadingFields(Sender: TObject; var AVar, AValue: string);
     procedure JTemplate1Replace(Sender: TObject);
   end;
 
@@ -38,7 +38,8 @@ begin
   JTemplate1.Replace;
 end;
 
-procedure TfrMain.JTemplate1LoadingFields(var AVar, AValue: string);
+procedure TfrMain.JTemplate1LoadingFields(Sender: TObject; var AVar,
+  AValue: string);
 begin
   edLog.Lines.Add(Format('Var: %s; Value: %s', [AVar, AValue]));
 end;
