@@ -23,7 +23,7 @@ type
   private
     FContent: string;
     FFields: TJSONObject;
-    FHTMLSupports: Boolean;
+    FHtmlSupports: Boolean;
     FTagEscape: ShortString;
     FTagPrefix: ShortString;
     FTagSuffix: ShortString;
@@ -34,10 +34,10 @@ type
     procedure LoadFromFile(const AFileName: TFileName);
     procedure SaveToStream(AStream: TStream);
     procedure SaveToFile(const AFileName: TFileName);
-    procedure Replace(const ARecursive: Boolean = False); overload;
+    procedure Replace(const ARecursive: Boolean = False); virtual;
     property Content: string read FContent write FContent;
     property Fields: TJSONObject read FFields;
-    property HTMLSupports: Boolean read FHTMLSupports write FHTMLSupports;
+    property HtmlSupports: Boolean read FHtmlSupports write FHtmlSupports;
     property TagPrefix: ShortString read FTagPrefix write FTagPrefix;
     property TagSuffix: ShortString read FTagSuffix write FTagSuffix;
     property TagEscape: ShortString read FTagEscape write FTagEscape;
@@ -81,8 +81,8 @@ function StrToHtml(const S: string): string;
     begin
       P := @LatinChars[Result];
       if Length(P^) <= ALen then
+        // compare in blocks of 8(x64), 4, 2 and 1 byte
         if CompareByte(P^[1], ABuf^, Length(P^)) = 0 then
-          // compare in blocks of 8(x64), 4, 2 and 1 byte
           Exit;
     end;
     Result := -1;
@@ -106,7 +106,8 @@ begin
     end
     else
     begin
-      VResStr := VResStr + PComp^; // it can be optimized decreasing the concatenations
+      // it can be optimized decreasing the concatenations
+      VResStr := VResStr + PComp^;
       Inc(PComp);
     end;
   end;
@@ -119,7 +120,7 @@ constructor TJTemplate.Create;
 begin
   FFields := TJSONObject.Create;
   FTagPrefix := '@';
-  FHTMLSupports := True;
+  FHtmlSupports := True;
 end;
 
 destructor TJTemplate.Destroy;
@@ -178,7 +179,7 @@ begin
   for I := 0 to Pred(FFields.Count) do
   begin
     VName := FTagPrefix + FFields.Names[I] + FTagSuffix;
-    if FHTMLSupports then
+    if FHtmlSupports then
       VValue := StrToHtml(FFields.Items[I].AsString)
     else
       VValue := FFields.Items[I].AsString;
