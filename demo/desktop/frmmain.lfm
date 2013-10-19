@@ -20,7 +20,7 @@ object frMain: TfrMain
   end
   object edResult: TIpHtmlPanel
     Left = 0
-    Height = 215
+    Height = 125
     Top = 25
     Width = 320
     Align = alClient
@@ -34,6 +34,15 @@ object frMain: TfrMain
     PrintSettings.MarginRight = 0.5
     PrintSettings.MarginBottom = 0.5
     TabOrder = 1
+  end
+  object edLog: TMemo
+    Left = 0
+    Height = 90
+    Top = 150
+    Width = 320
+    Align = alBottom
+    ScrollBars = ssAutoBoth
+    TabOrder = 2
   end
   object dp: TIpFileDataProvider
     left = 56
@@ -54,6 +63,7 @@ object frMain: TfrMain
     )
     HtmlSupports = True
     TagPrefix = '@'
+    OnLoadingFields = JTemplate1LoadingFields
     OnReplace = JTemplate1Replace
     left = 118
     top = 40

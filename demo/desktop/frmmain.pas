@@ -5,7 +5,7 @@ unit frmmain;
 interface
 
 uses
-  Ipfilebroker, IpHtml, Forms, StdCtrls, JTemplate;
+  Ipfilebroker, IpHtml, Forms, StdCtrls, SysUtils, JTemplate;
 
 type
 
@@ -16,7 +16,9 @@ type
     dp: TIpFileDataProvider;
     edResult: TIpHtmlPanel;
     JTemplate1: TJTemplate;
+    edLog: TMemo;
     procedure btReplaceClick(Sender: TObject);
+    procedure JTemplate1LoadingFields(var AVar, AValue: string);
     procedure JTemplate1Replace(Sender: TObject);
   end;
 
@@ -34,6 +36,11 @@ begin
   JTemplate1.Fields.Strings['title'] := 'My title';
   JTemplate1.Fields.Strings['body'] := 'My body';
   JTemplate1.Replace;
+end;
+
+procedure TfrMain.JTemplate1LoadingFields(var AVar, AValue: string);
+begin
+  edLog.Lines.Add(Format('Var: %s; Value: %s', [AVar, AValue]));
 end;
 
 procedure TfrMain.JTemplate1Replace(Sender: TObject);
