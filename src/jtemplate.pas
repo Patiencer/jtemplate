@@ -21,7 +21,7 @@ type
 
   TJTemplateStreamClass = class of TJTemplateStream;
 
-  TJTemplateLoadingFields = procedure(Sender: TObject;
+  TJTemplateLoadingFieldsEvent = procedure(Sender: TObject;
     var AVar, AValue: string) of object;
 
   { TJTemplateParser }
@@ -31,7 +31,7 @@ type
     FContent: string;
     FFields: TJSONObject;
     FHtmlSupports: Boolean;
-    FOnLoadingFields: TJTemplateLoadingFields;
+    FOnLoadingFields: TJTemplateLoadingFieldsEvent;
     FOnReplace: TNotifyEvent;
     FTagEscape: ShortString;
     FTagPrefix: ShortString;
@@ -46,7 +46,7 @@ type
     property TagPrefix: ShortString read FTagPrefix write FTagPrefix;
     property TagSuffix: ShortString read FTagSuffix write FTagSuffix;
     property TagEscape: ShortString read FTagEscape write FTagEscape;
-    property OnLoadingFields: TJTemplateLoadingFields read FOnLoadingFields
+    property OnLoadingFields: TJTemplateLoadingFieldsEvent read FOnLoadingFields
       write FOnLoadingFields;
     property OnReplace: TNotifyEvent read FOnReplace write FOnReplace;
   end;
@@ -75,7 +75,7 @@ type
   TJTemplate = class(TComponent)
   private
     FContent: TStrings;
-    FOnLoadingFields: TJTemplateLoadingFields;
+    FOnLoadingFields: TJTemplateLoadingFieldsEvent;
     FOnReplace: TNotifyEvent;
     FStream: TJTemplateStream;
     function GetContent: TStrings;
@@ -116,7 +116,7 @@ type
     property TagPrefix: string read GetTagPrefix write SetTagPrefix;
     property TagSuffix: string read GetTagSuffix write SetTagSuffix;
     property TagEscape: string read GetTagEscape write SetTagEscape;
-    property OnLoadingFields: TJTemplateLoadingFields read FOnLoadingFields
+    property OnLoadingFields: TJTemplateLoadingFieldsEvent read FOnLoadingFields
       write FOnLoadingFields;
     property OnReplace: TNotifyEvent read FOnReplace write FOnReplace;
   end;
