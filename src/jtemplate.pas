@@ -1,5 +1,5 @@
 (*
-  J-TEmplate plugin.
+  J-Template plugin.
   Copyright (C) 2012-2014 Silvio Clecio.
 
   Please see the LICENSE file.
